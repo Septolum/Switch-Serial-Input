@@ -19,6 +19,7 @@ To clone the repo, use:
 as LUFA has been included as a git submodule.
 
 To compile, enter the cloned directory in a terminal window and type `make`
+
 To change what board you're compiling for, just change the MCU value in the makefile (case insensetive, use LUFA's board names linked above).
 
 To then upload to your pro micro, follow the flashing part of the guide on [this page](https://deskthority.net/workshop-f7/how-to-use-a-pro-micro-as-a-cheap-controller-converter-like-soarer-s-t8448.html) and use `Joystick.hex` as your filename
