@@ -50,20 +50,22 @@ typedef enum {
 	HOME
 } Buttons_t;
 
+#define MAX_SIMULTANEOUS 16 // change number to change maximum possible number of simultaneous button presses
+
 typedef struct {
-	Buttons_t button[32];
+	Buttons_t button[MAX_SIMULTANEOUS]; 
 	uint16_t duration;
 } command; 
 
 static const command step[] = {
 	// Setup controller
-	{ { NOTHING },  250 },
-	{ { L, R },   5 },
-	{ { NOTHING },  150 },
-	{ { L, R },   5 },
-	{ { NOTHING },  150 },
-	{ { A },          5 },
-	{ { NOTHING },  250 },
+	{ { NOTHING }, 250 },
+	{ { L, R }, 5 },
+	{ { NOTHING }, 150 },
+	{ { L, R }, 5 },
+	{ { NOTHING }, 150 },
+	{ { A }, 5 },
+	{ { NOTHING }, 250 },
 	
 	{ { LUP }, 50 },
 	{ { NOTHING }, 100 },
@@ -331,7 +333,7 @@ void GetNextReport(USB_JoystickReport_Input_t* const ReportData) {
 
 		case PROCESS:
 		
-			for(int i = 32; i > -1; i--)
+			for(int i = MAX_SIMULTANEOUS; i > -1; i--)
 			{	
 				switch (step[bufindex].button[i])
 				{
@@ -458,6 +460,7 @@ void GetNextReport(USB_JoystickReport_Input_t* const ReportData) {
 						break;
 				}
 			}
+			
 			duration_count++;
 
 			if (duration_count > step[bufindex].duration)
