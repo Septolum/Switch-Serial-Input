@@ -1,36 +1,25 @@
-## snowball thrower
+## Switch Serial Input
 
-Automatically throws snowballs in The Legend of Zelda: Breath of the Wild by emulating a controller on a Teensy++ v2.0
+Based on [Bert's snowball thrower](https://github.com/bertrandom/snowball-thrower), the final aim of this is to accept commands via serial input and then perform them as a controller, useful for TAS's or TwitchPlays[Switch Game].
 
-[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/udo8mv5oarg/0.jpg)](https://www.youtube.com/watch?v=udo8mv5oarg)
+This project uses an atmega32u4 based pro micro (available on aliexpress for around £2.70), but will work on a Teensy++ v2.0 (untested), and should work on all [LUFA compatible boards](http://www.fourwalledcubicle.com/files/LUFA/Doc/151115/html/_page__device_support.html).
 
-A full writeup is [here](https://medium.com/@bertrandom/automating-zelda-3b37127e24c8).
+## Current State
 
-#### How to use
+Currently, no serial input is working. However, you can now press more than one button at a time in the hardcoded script, alowing for more complex scripts and allowing the user to more easily adapt it for their own needs.
 
-Walk up to Pondo until the **(A) Talk** option is available and plug in the controller. It will automatically sync with the console, initiate the bowling game with Pondo, throw a perfect strike, and end the bowling game. It will play the bowling game in a loop.
+## Cloning, Compiling and Flashing
 
-Note that due to certain weather conditions, Link will sometimes fail to throw a strike, causing the game to enter into a mode where Link has to throw again. Thanks to a [change by exsilium](https://github.com/bertrandom/snowball-thrower/pull/1), the loop will recover from this, given enough time. I've tested this running for over 24 hours.
+This project requires gcc-avr to compile, head to [Teensy's Page](https://www.pjrc.com/teensy/gcc.html) to find out how to install it for your operating system. If you have any trouble, or it doesn't work, refer to Bert's readme as the compiling method is the same.
 
-In case you see issues with controller conflicts while in docked mode, try using a USB-C to USB-A adapter in handheld mode. In dock mode, changes in the HDMI connection will briefly make the Switch not respond to incoming USB commands, skipping parts of the sequence. These changes may include turning off the TV, or switching the HDMI input. (Switching to the internal tuner will be OK, if this doesn't trigger a change in the HDMI input.)
+To clone the repo, use:
 
-This repository has been tested using a Teensy 2.0++.
+`git clone --recursive https://github.com/Septolum/Switch-Serial-Input`
 
-#### Compiling and Flashing onto the Teensy 2.0++
-Go to the Teensy website and download/install the [Teensy Loader application](https://www.pjrc.com/teensy/loader.html). For Linux, follow their instructions for installing the [GCC Compiler and Tools](https://www.pjrc.com/teensy/gcc.html). For Windows, you will need the [latest AVR toolchain](http://www.atmel.com/tools/atmelavrtoolchainforwindows.aspx) from the Atmel site. See [this issue](https://github.com/LightningStalker/Splatmeme-Printer/issues/10) and [this thread](http://gbatemp.net/threads/how-to-use-shinyquagsires-splatoon-2-post-printer.479497/) on GBAtemp for more information. (Note for Mac users - the AVR MacPack is now called AVR CrossPack. If that does not work, you can try installing `avr-gcc` with `brew`.)
+as LUFA has been included as a git submodule.
 
-LUFA has been included as a git submodule, so cloning the repo like this:
+To compile, enter the cloned directory in a terminal window and type `make`
 
-```
-git clone --recursive git@github.com:bertrandom/snowball-thrower.git
-```
+To change what board you're compiling for, just change the MCU value in the makefile (case insensetive, use LUFA's board names linked above).
 
-will put LUFA in the right directory.
-
-Now you should be ready to rock. Open a terminal window in the `snowball-thrower` directory, type `make`, and hit enter to compile. If all goes well, the printout in the terminal will let you know it finished the build! Follow the directions on flashing `Joystick.hex` onto your Teensy, which can be found page where you downloaded the Teensy Loader application.
-
-#### Thanks
-
-Thanks to Shiny Quagsire for his [Splatoon post printer](https://github.com/shinyquagsire23/Switch-Fightstick) and progmem for his [original discovery](https://github.com/progmem/Switch-Fightstick).
-
-Thanks to [exsilium](https://github.com/bertrandom/snowball-thrower/pull/1) for improving the command structure, optimizing the waiting times, and handling the failure scenarios. It can now run indefinitely!
+To then upload to your pro micro, follow the flashing part of the guide on [this page](https://deskthority.net/workshop-f7/how-to-use-a-pro-micro-as-a-cheap-controller-converter-like-soarer-s-t8448.html) and use `Joystick.hex` as your filename
