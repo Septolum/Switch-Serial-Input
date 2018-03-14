@@ -21,6 +21,7 @@ these buttons for our use.
 #include "Joystick.h"
 
 typedef enum {
+	NOTHING,
 	LUP,
 	LDOWN,
 	LLEFT,
@@ -46,86 +47,83 @@ typedef enum {
 	LCLICK,
 	RCLICK,
 	CAPTURE,
-	HOME,
-	THROW,
-	NOTHING,
-	TRIGGERS
+	HOME
 } Buttons_t;
 
 typedef struct {
-	Buttons_t button;
+	Buttons_t button[32];
 	uint16_t duration;
 } command; 
 
 static const command step[] = {
 	// Setup controller
-	{ NOTHING,  250 },
-	{ TRIGGERS,   5 },
-	{ NOTHING,  150 },
-	{ TRIGGERS,   5 },
-	{ NOTHING,  150 },
-	{ A,          5 },
-	{ NOTHING,  250 },
+	{ { NOTHING },  250 },
+	{ { L, R },   5 },
+	{ { NOTHING },  150 },
+	{ { L, R },   5 },
+	{ { NOTHING },  150 },
+	{ { A },          5 },
+	{ { NOTHING },  250 },
 	
-	{ LUP, 10 },
-	{ NOTHING, 20 },
-	{ LDOWN, 10 },
-	{ NOTHING, 20 },
-	{ LLEFT, 10 },
-	{ NOTHING, 20 },
-	{ LRIGHT, 10 },
-	{ NOTHING, 20 },
+	{ { LUP }, 50 },
+	{ { NOTHING }, 100 },
+	{ { LDOWN }, 50 },
+	{ { NOTHING }, 100 },
+	{ { LLEFT }, 50 },
+	{ { NOTHING }, 100 },
+	{ { LRIGHT }, 50 },
+	{ { NOTHING }, 100 },
 
-	{ RUP, 10 },
-	{ NOTHING, 20 },
-	{ RDOWN, 10 },
-	{ NOTHING, 20 },
-	{ RLEFT, 10 },
-	{ NOTHING, 20 },
-	{ RRIGHT, 10 },
-	{ NOTHING, 20 },
+	{ { RUP }, 50 },
+	{ { NOTHING }, 100 },
+	{ { RDOWN }, 50 },
+	{ { NOTHING }, 100 },
+	{ { RLEFT }, 50 },
+	{ { NOTHING }, 100 },
+	{ { RRIGHT }, 50 },
+	{ { NOTHING }, 100 },
 	
-	{ DUP, 10 },
-	{ NOTHING, 20 },
-	{ DDOWN, 10 },
-	{ NOTHING, 20 },
-	{ DLEFT, 10 },
-	{ NOTHING, 20 },
-	{ DRIGHT, 10 },
-	{ NOTHING, 20 },
+	{ { DUP }, 50 },
+	{ { NOTHING }, 100 },
+	{ { DDOWN }, 50 },
+	{ { NOTHING }, 100 },
+	{ { DLEFT }, 50 },
+	{ { NOTHING }, 100 },
+	{ { DRIGHT }, 50 },
+	{ { NOTHING }, 100 },
 	
-	{ A, 10 },
-	{ NOTHING, 20 },
-	{ B, 10 },
-	{ NOTHING, 20 },
-	{ X, 10 },
-	{ NOTHING, 20 },
-	{ Y, 10 },
-	{ NOTHING, 20 },
+	{ { A }, 50 },
+	{ { NOTHING }, 100 },
+	{ { B }, 50 },
+	{ { NOTHING }, 100 },
+	{ { X }, 50 },
+	{ { NOTHING }, 100 },
+	{ { Y }, 50 },
+	{ { NOTHING }, 100 },
 	
 	
-	{ L, 10 },
-	{ NOTHING, 20 },
-	{ R, 10 },
-	{ NOTHING, 20 },
-	{ ZL, 10 },
-	{ NOTHING, 20 },
-	{ ZR, 10 },
-	{ NOTHING, 20 },
+	{ { L }, 50 },
+	{ { NOTHING }, 100 },
+	{ { R }, 50 },
+	{ { NOTHING }, 100 },
+	{ { ZL }, 50 },
+	{ { NOTHING }, 100 },
+	{ { ZR }, 50 },
+	{ { NOTHING }, 100 },
 	
-	{ LCLICK, 10 },
-	{ NOTHING, 20 },
-	{ RCLICK, 10 },
-	{ NOTHING, 20 },
-	{ MINUS, 10 },
-	{ NOTHING, 20 },
-	{ PLUS, 10 },
-	{ NOTHING, 20 },
+	{ { LCLICK }, 50 },
+	{ { NOTHING }, 100 },
+	{ { RCLICK }, 50 },
+	{ { NOTHING }, 100 },
+	{ { MINUS }, 50 },
+	{ { NOTHING }, 100 },
+	{ { PLUS }, 50 },
+	{ { NOTHING }, 100 },
 	
-	{ CAPTURE, 10 },
-	{ NOTHING, 20 },
-	{ HOME, 10 },
-	{ NOTHING, 20 },
+	{ { CAPTURE }, 50 },
+	{ { NOTHING }, 100 },
+	{ { HOME }, 50 },
+	{ { NOTHING }, 100 },
 };
 
 // Main entry point.
@@ -332,132 +330,134 @@ void GetNextReport(USB_JoystickReport_Input_t* const ReportData) {
 			break;
 
 		case PROCESS:
+		
+			for(int i = 32; i > -1; i--)
+			{	
+				switch (step[bufindex].button[i])
+				{
 
-			switch (step[bufindex].button)
-			{
+					case LUP:
+						ReportData->LY = STICK_MIN;				
+						break;
 
-				case LUP:
-					ReportData->LY = STICK_MIN;				
-					break;
+					case LLEFT:
+						ReportData->LX = STICK_MIN;				
+						break;
 
-				case LLEFT:
-					ReportData->LX = STICK_MIN;				
-					break;
+					case LDOWN:
+						ReportData->LY = STICK_MAX;				
+						break;
 
-				case LDOWN:
-					ReportData->LY = STICK_MAX;				
-					break;
+					case LRIGHT:
+						ReportData->LX = STICK_MAX;				
+						break;
+						
+					case RUP:
+						ReportData->RY = STICK_MIN;				
+						break;
 
-				case LRIGHT:
-					ReportData->LX = STICK_MAX;				
-					break;
-					
-				case RUP:
-					ReportData->RY = STICK_MIN;				
-					break;
+					case RLEFT:
+						ReportData->RX = STICK_MIN;				
+						break;
 
-				case RLEFT:
-					ReportData->RX = STICK_MIN;				
-					break;
+					case RDOWN:
+						ReportData->RY = STICK_MAX;				
+						break;
 
-				case RDOWN:
-					ReportData->RY = STICK_MAX;				
-					break;
+					case RRIGHT:
+						ReportData->RX = STICK_MAX;				
+						break;
+						
+					case DUP:
+						ReportData->HAT = HAT_TOP;				
+						break;
 
-				case RRIGHT:
-					ReportData->RX = STICK_MAX;				
-					break;
-					
-				case DUP:
-					ReportData->HAT = HAT_TOP;				
-					break;
+					case DLEFT:
+						ReportData->HAT = HAT_LEFT;				
+						break;
 
-				case DLEFT:
-					ReportData->HAT = HAT_LEFT;				
-					break;
+					case DDOWN:
+						ReportData->HAT = HAT_BOTTOM;				
+						break;
 
-				case DDOWN:
-					ReportData->HAT = HAT_BOTTOM;				
-					break;
+					case DRIGHT:
+						ReportData->HAT = HAT_RIGHT;				
+						break;
 
-				case DRIGHT:
-					ReportData->HAT = HAT_RIGHT;				
-					break;
+					case A:
+						ReportData->Button |= SWITCH_A;
+						break;
 
-				case A:
-					ReportData->Button |= SWITCH_A;
-					break;
+					case B:
+						ReportData->Button |= SWITCH_B;
+						break;
+						
+					case X:
+						ReportData->Button |= SWITCH_X;
+						break;
 
-				case B:
-					ReportData->Button |= SWITCH_B;
-					break;
-					
-				case X:
-					ReportData->Button |= SWITCH_X;
-					break;
+					case Y:
+						ReportData->Button |= SWITCH_Y;
+						break;
 
-				case Y:
-					ReportData->Button |= SWITCH_Y;
-					break;
+					case L:
+						ReportData->Button |= SWITCH_L;
+						break;
 
-				case L:
-					ReportData->Button |= SWITCH_L;
-					break;
+					case R:
+						ReportData->Button |= SWITCH_R;
+						break;
+						
+					case ZL:
+						ReportData->Button |= SWITCH_ZL;
+						break;
 
-				case R:
-					ReportData->Button |= SWITCH_R;
-					break;
-					
-				case ZL:
-					ReportData->Button |= SWITCH_ZL;
-					break;
+					case ZR:
+						ReportData->Button |= SWITCH_ZR;
+						break;
+						
+					case MINUS:
+						ReportData->Button |= SWITCH_MINUS;
+						break;
 
-				case ZR:
-					ReportData->Button |= SWITCH_ZR;
-					break;
-					
-				case MINUS:
-					ReportData->Button |= SWITCH_MINUS;
-					break;
+					case PLUS:
+						ReportData->Button |= SWITCH_PLUS;
+						break;
 
-				case PLUS:
-					ReportData->Button |= SWITCH_PLUS;
-					break;
+					case LCLICK:
+						ReportData->Button |= SWITCH_LCLICK;
+						break;
 
-				case LCLICK:
-					ReportData->Button |= SWITCH_LCLICK;
-					break;
+					case RCLICK:
+						ReportData->Button |= SWITCH_RCLICK;
+						break;
+						
+					case CAPTURE:
+						ReportData->Button |= SWITCH_CAPTURE;
+						break;
 
-				case RCLICK:
-					ReportData->Button |= SWITCH_RCLICK;
-					break;
-					
-				case CAPTURE:
-					ReportData->Button |= SWITCH_CAPTURE;
-					break;
+					case HOME:
+						ReportData->Button |= SWITCH_HOME;
+						break;
+						
+					//case THROW:
+					//	ReportData->LY = STICK_MIN;				
+					//	ReportData->Button |= SWITCH_R;
+					//	break;
 
-				case HOME:
-					ReportData->Button |= SWITCH_HOME;
-					break;
-					
-				case THROW:
-					ReportData->LY = STICK_MIN;				
-					ReportData->Button |= SWITCH_R;
-					break;
+					//case TRIGGERS:
+					//	ReportData->Button |= SWITCH_L | SWITCH_R;
+					//	break;
 
-				case TRIGGERS:
-					ReportData->Button |= SWITCH_L | SWITCH_R;
-					break;
-
-				default:
-					ReportData->LX = STICK_CENTER;
-					ReportData->LY = STICK_CENTER;
-					ReportData->RX = STICK_CENTER;
-					ReportData->RY = STICK_CENTER;
-					ReportData->HAT = HAT_CENTER;
-					break;
+					default:
+						ReportData->LX = STICK_CENTER;
+						ReportData->LY = STICK_CENTER;
+						ReportData->RX = STICK_CENTER;
+						ReportData->RY = STICK_CENTER;
+						ReportData->HAT = HAT_CENTER;
+						break;
+				}
 			}
-
 			duration_count++;
 
 			if (duration_count > step[bufindex].duration)
