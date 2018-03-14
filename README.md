@@ -6,7 +6,9 @@ This project uses an atmega32u4 based pro micro (available on aliexpress for aro
 
 ## Current State
 
-Currently, no serial input is working. However, you can now press more than one button at a time in the hardcoded script, alowing for more complex scripts and allowing the user to more easily adapt it for their own needs.
+Currently, no serial input is working. However, you can now press more than one button at a time in the hardcoded script, alowing for more complex scripts and allowing the user to more easily adapt it for their own needs. Unfortunately there seems to be a timing limitation, with a minimum of 30 cycles needed between button presses.
+
+There is also a working basic serial implementation [here](https://github.com/ebith/Switch-Fightstick)
 
 ## Cloning, Compiling and Flashing
 
