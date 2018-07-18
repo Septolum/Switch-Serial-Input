@@ -6,7 +6,7 @@ This project uses an atmega32u4 based pro micro (available on aliexpress for aro
 
 ## Current State
 
-Currently, no serial input is working. However, you can now press more than one button at a time in the hardcoded script, alowing for more complex scripts and allowing the user to more easily adapt it for their own needs. Unfortunately there seems to be a timing limitation, with a minimum of 30 cycles needed between button presses.
+Currently, no serial input is working. ~~However, you can now press more than one button at a time in the hardcoded script, alowing for more complex scripts and allowing the user to more easily adapt it for their own needs. Unfortunately there seems to be a timing limitation, with a minimum of 30 cycles needed between button presses.~~ (Changed [commit 9d2cf11](https://github.com/Septolum/Switch-Serial-Input/commit/9d2cf1151ca0bc6b0c8b139047fdbce7c1f74190), it now takes input from pins pulled low, most code from [sunian's fork](https://github.com/sunian/Switch-Fightstick))
 
 There is also a working basic serial implementation [here](https://github.com/ebith/Switch-Fightstick)
 
