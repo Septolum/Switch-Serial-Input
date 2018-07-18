@@ -18,115 +18,13 @@ exception of Home and Capture. Descriptor modification allows us to unlock
 these buttons for our use.
 */
 
+/** \file
+ *
+ *  Main source file for the posts printer demo. This file contains the main tasks of
+ *  the demo and is responsible for the initial application hardware configuration.
+ */
+
 #include "Joystick.h"
-
-typedef enum {
-	NOTHING,
-	LUP,
-	LDOWN,
-	LLEFT,
-	LRIGHT,
-	RUP,
-	RDOWN,
-	RLEFT,
-	RRIGHT,
-	DUP,
-	DDOWN,
-	DLEFT,
-	DRIGHT,
-	X,
-	Y,
-	A,
-	B,
-	L,
-	R,
-	ZL,
-	ZR,
-	MINUS,
-	PLUS,
-	LCLICK,
-	RCLICK,
-	CAPTURE,
-	HOME
-} Buttons_t;
-
-#define MAX_SIMULTANEOUS 16 // change number to change maximum possible number of simultaneous button presses
-
-typedef struct {
-	Buttons_t button[MAX_SIMULTANEOUS]; 
-	uint16_t duration;
-} command; 
-
-static const command step[] = {
-	// Setup controller
-	{ { NOTHING }, 250 },
-	{ { L, R }, 5 },
-	{ { NOTHING }, 150 },
-	{ { L, R }, 5 },
-	{ { NOTHING }, 150 },
-	{ { A }, 5 },
-	{ { NOTHING }, 250 },
-	
-	{ { LUP }, 50 },
-	{ { NOTHING }, 100 },
-	{ { LDOWN }, 50 },
-	{ { NOTHING }, 100 },
-	{ { LLEFT }, 50 },
-	{ { NOTHING }, 100 },
-	{ { LRIGHT }, 50 },
-	{ { NOTHING }, 100 },
-
-	{ { RUP }, 50 },
-	{ { NOTHING }, 100 },
-	{ { RDOWN }, 50 },
-	{ { NOTHING }, 100 },
-	{ { RLEFT }, 50 },
-	{ { NOTHING }, 100 },
-	{ { RRIGHT }, 50 },
-	{ { NOTHING }, 100 },
-	
-	{ { DUP }, 50 },
-	{ { NOTHING }, 100 },
-	{ { DDOWN }, 50 },
-	{ { NOTHING }, 100 },
-	{ { DLEFT }, 50 },
-	{ { NOTHING }, 100 },
-	{ { DRIGHT }, 50 },
-	{ { NOTHING }, 100 },
-	
-	{ { A }, 50 },
-	{ { NOTHING }, 100 },
-	{ { B }, 50 },
-	{ { NOTHING }, 100 },
-	{ { X }, 50 },
-	{ { NOTHING }, 100 },
-	{ { Y }, 50 },
-	{ { NOTHING }, 100 },
-	
-	
-	{ { L }, 50 },
-	{ { NOTHING }, 100 },
-	{ { R }, 50 },
-	{ { NOTHING }, 100 },
-	{ { ZL }, 50 },
-	{ { NOTHING }, 100 },
-	{ { ZR }, 50 },
-	{ { NOTHING }, 100 },
-	
-	{ { LCLICK }, 50 },
-	{ { NOTHING }, 100 },
-	{ { RCLICK }, 50 },
-	{ { NOTHING }, 100 },
-	{ { MINUS }, 50 },
-	{ { NOTHING }, 100 },
-	{ { PLUS }, 50 },
-	{ { NOTHING }, 100 },
-	
-	{ { CAPTURE }, 50 },
-	{ { NOTHING }, 100 },
-	{ { HOME }, 50 },
-	{ { NOTHING }, 100 },
-};
 
 // Main entry point.
 int main(void) {
@@ -154,16 +52,16 @@ void SetupHardware(void) {
 	clock_prescale_set(clock_div_1);
 	// We can then initialize our hardware and peripherals, including the USB stack.
 
-	#ifdef ALERT_WHEN_DONE
-	// Both PORTD and PORTB will be used for the optional LED flashing and buzzer.
-	#warning LED and Buzzer functionality enabled. All pins on both PORTB and \
-PORTD will toggle when printing is done.
-	DDRD  = 0xFF; //Teensy uses PORTD
-	PORTD =  0x0;
-                  //We'll just flash all pins on both ports since the UNO R3
-	DDRB  = 0xFF; //uses PORTB. Micro can use either or, but both give us 2 LEDs
-	PORTB =  0x0; //The ATmega328P on the UNO will be resetting, so unplug it?
-	#endif
+
+	DDRD = 0x0; // read from pin D
+	DDRD |= (1<<5); // output to LED on D6
+
+	// DDRC = 0x0; // read from pin C
+	DDRF = 0x0; // read from pin F
+	DDRB = 0x0; // read from pin B
+	PORTB = 0xFF; //pull up port B
+	PORTF = 0xFF; //pull up port F
+	//DDRE |= (1<<0); // connected to RESET pin on Arduino
 	// The USB stack should be initialized last.
 	USB_Init();
 }
@@ -240,24 +138,11 @@ void HID_Task(void) {
 
 typedef enum {
 	SYNC_CONTROLLER,
-	SYNC_POSITION,
-	BREATHE,
-	PROCESS,
-	CLEANUP,
-	DONE
+	PLAY
 } State_t;
 State_t state = SYNC_CONTROLLER;
 
-#define ECHOES 2
-int echoes = 0;
-USB_JoystickReport_Input_t last_report;
-
 int report_count = 0;
-int xpos = 0;
-int ypos = 0;
-int bufindex = 0;
-int duration_count = 0;
-int portsval = 0;
 
 // Prepare the next report for the host.
 void GetNextReport(USB_JoystickReport_Input_t* const ReportData) {
@@ -270,251 +155,118 @@ void GetNextReport(USB_JoystickReport_Input_t* const ReportData) {
 	ReportData->RY = STICK_CENTER;
 	ReportData->HAT = HAT_CENTER;
 
-	// Repeat ECHOES times the last report
-	if (echoes > 0)
-	{
-		memcpy(ReportData, &last_report, sizeof(USB_JoystickReport_Input_t));
-		echoes--;
-		return;
-	}
-
 	// States and moves management
 	switch (state)
 	{
-
 		case SYNC_CONTROLLER:
-			state = BREATHE;
-			break;
-
-		// case SYNC_CONTROLLER:
-		// 	if (report_count > 550)
-		// 	{
-		// 		report_count = 0;
-		// 		state = SYNC_POSITION;
-		// 	}
-		// 	else if (report_count == 250 || report_count == 300 || report_count == 325)
-		// 	{
-		// 		ReportData->Button |= SWITCH_L | SWITCH_R;
-		// 	}
-		// 	else if (report_count == 350 || report_count == 375 || report_count == 400)
-		// 	{
-		// 		ReportData->Button |= SWITCH_A;
-		// 	}
-		// 	else
-		// 	{
-		// 		ReportData->Button = 0;
-		// 		ReportData->LX = STICK_CENTER;
-		// 		ReportData->LY = STICK_CENTER;
-		// 		ReportData->RX = STICK_CENTER;
-		// 		ReportData->RY = STICK_CENTER;
-		// 		ReportData->HAT = HAT_CENTER;
-		// 	}
-		// 	report_count++;
-		// 	break;
-
-		case SYNC_POSITION:
-			bufindex = 0;
-
-
-			ReportData->Button = 0;
-			ReportData->LX = STICK_CENTER;
-			ReportData->LY = STICK_CENTER;
-			ReportData->RX = STICK_CENTER;
-			ReportData->RY = STICK_CENTER;
-			ReportData->HAT = HAT_CENTER;
-
-
-			state = BREATHE;
-			break;
-
-		case BREATHE:
-			state = PROCESS;
-			break;
-
-		case PROCESS:
-		
-			for(int i = MAX_SIMULTANEOUS; i > -1; i--)
-			{	
-				switch (step[bufindex].button[i])
-				{
-
-					case LUP:
-						ReportData->LY = STICK_MIN;				
-						break;
-
-					case LLEFT:
-						ReportData->LX = STICK_MIN;				
-						break;
-
-					case LDOWN:
-						ReportData->LY = STICK_MAX;				
-						break;
-
-					case LRIGHT:
-						ReportData->LX = STICK_MAX;				
-						break;
-						
-					case RUP:
-						ReportData->RY = STICK_MIN;				
-						break;
-
-					case RLEFT:
-						ReportData->RX = STICK_MIN;				
-						break;
-
-					case RDOWN:
-						ReportData->RY = STICK_MAX;				
-						break;
-
-					case RRIGHT:
-						ReportData->RX = STICK_MAX;				
-						break;
-						
-					case DUP:
-						ReportData->HAT = HAT_TOP;				
-						break;
-
-					case DLEFT:
-						ReportData->HAT = HAT_LEFT;				
-						break;
-
-					case DDOWN:
-						ReportData->HAT = HAT_BOTTOM;				
-						break;
-
-					case DRIGHT:
-						ReportData->HAT = HAT_RIGHT;				
-						break;
-
-					case A:
-						ReportData->Button |= SWITCH_A;
-						break;
-
-					case B:
-						ReportData->Button |= SWITCH_B;
-						break;
-						
-					case X:
-						ReportData->Button |= SWITCH_X;
-						break;
-
-					case Y:
-						ReportData->Button |= SWITCH_Y;
-						break;
-
-					case L:
-						ReportData->Button |= SWITCH_L;
-						break;
-
-					case R:
-						ReportData->Button |= SWITCH_R;
-						break;
-						
-					case ZL:
-						ReportData->Button |= SWITCH_ZL;
-						break;
-
-					case ZR:
-						ReportData->Button |= SWITCH_ZR;
-						break;
-						
-					case MINUS:
-						ReportData->Button |= SWITCH_MINUS;
-						break;
-
-					case PLUS:
-						ReportData->Button |= SWITCH_PLUS;
-						break;
-
-					case LCLICK:
-						ReportData->Button |= SWITCH_LCLICK;
-						break;
-
-					case RCLICK:
-						ReportData->Button |= SWITCH_RCLICK;
-						break;
-						
-					case CAPTURE:
-						ReportData->Button |= SWITCH_CAPTURE;
-						break;
-
-					case HOME:
-						ReportData->Button |= SWITCH_HOME;
-						break;
-						
-					//case THROW:
-					//	ReportData->LY = STICK_MIN;				
-					//	ReportData->Button |= SWITCH_R;
-					//	break;
-
-					//case TRIGGERS:
-					//	ReportData->Button |= SWITCH_L | SWITCH_R;
-					//	break;
-
-					default:
-						ReportData->LX = STICK_CENTER;
-						ReportData->LY = STICK_CENTER;
-						ReportData->RX = STICK_CENTER;
-						ReportData->RY = STICK_CENTER;
-						ReportData->HAT = HAT_CENTER;
-						break;
-				}
-			}
-			
-			duration_count++;
-
-			if (duration_count > step[bufindex].duration)
+		    PORTD &= ~(1<<5); // LED on while syncing
+			if (report_count > 100)
 			{
-				bufindex++;
-				duration_count = 0;				
+				report_count = 0;
+				state = PLAY;
 			}
-
-
-			if (bufindex > (int)( sizeof(step) / sizeof(step[0])) - 1)
+			else if (report_count == 25 || report_count == 50)
 			{
-
-				// state = CLEANUP;
-
-				bufindex = 7;
-				duration_count = 0;
-
-				state = BREATHE;
-
-				ReportData->LX = STICK_CENTER;
-				ReportData->LY = STICK_CENTER;
-				ReportData->RX = STICK_CENTER;
-				ReportData->RY = STICK_CENTER;
-				ReportData->HAT = HAT_CENTER;
-
-
-				// state = DONE;
-//				state = BREATHE;
+				ReportData->Button |= SWITCH_L | SWITCH_R;
+				// PORTE &= ~(1<<0);
+			}
+			else if (report_count == 75 || report_count == 100)
+			{
+				ReportData->Button |= SWITCH_A;
+				// PORTE |= (1<<0);
 
 			}
-
+			report_count++;
 			break;
+		case PLAY:
+		    // flash the LED once every 100 packets
+		    if (report_count == 0) {
+		        PORTD &= ~(1<<5); // set PD6
+		    } else {
+		        PORTD |= (1<<5); // clear PD6
+		    }
+            report_count++;
+            report_count = report_count % 100;
 
-		case CLEANUP:
-			state = DONE;
-			break;
+            /* // assign first 8 buttons from pin C
+            ReportData->Button = PINC;
+            // rest of the buttons from pin B
+            if (PINB & (1<<1)) {
+                ReportData->Button |= SWITCH_PLUS;
+            }
+            if (PINB & (1<<2)) {
+                ReportData->Button |= SWITCH_MINUS;
+            }
+            if (PINB & (1<<3)) {
+                ReportData->Button |= SWITCH_HOME;
+            }
 
-		case DONE:
-			#ifdef ALERT_WHEN_DONE
-			portsval = ~portsval;
-			PORTD = portsval; //flash LED(s) and sound buzzer if attached
-			PORTB = portsval;
-			_delay_ms(250);
-			#endif
+            if (PIND & (1<<3)) {
+                ReportData->HAT = HAT_TOP;
+            }
+            if (PIND & (1<<2)) {
+                ReportData->HAT = HAT_BOTTOM;
+            }
+            if (PIND & (1<<1)) {
+                ReportData->HAT = HAT_LEFT;
+            }
+            if (PIND & (1<<0)) {
+                ReportData->HAT = HAT_RIGHT;
+            } */
+
+            // analog sticks from pin F
+            int stickMax = STICK_MAX;
+            int stickMin = STICK_MIN;
+            /* if (PINB & (1<<0)) {
+                // only for left analog stick
+                stickMax = STICK_CENTER + 64;
+                stickMin = STICK_CENTER - 64;
+            } */
+
+            if (~PINF & (1<<7)) {
+                ReportData->LY = stickMin;
+            }
+            if (~PINF & (1<<6)) {
+                ReportData->LY = stickMax;
+            }
+            if (~PINF & (1<<5)) {
+                ReportData->LX = stickMin;
+            }
+            if (~PINF & (1<<4)) {
+                ReportData->LX = stickMax;
+            }/*
+            if (PINF & (1<<3)) {
+                ReportData->RY = STICK_MIN;
+            } 
+            if (PINF & (1<<2)) {
+                ReportData->RY = STICK_MAX;
+            }
+            if (PINF & (1<<1)) {
+                ReportData->RX = STICK_MAX;
+            }
+            if (PINF & (1<<0)) {
+                ReportData->RX = STICK_MIN;
+            } */
+            if (~PINB & (1<<6)) {
+                ReportData->Button |= SWITCH_PLUS;
+            }
+            if (~PINB & (1<<5)) {
+                ReportData->Button |= SWITCH_A;
+            }
+            if (~PINB & (1<<4)) {
+                ReportData->Button |= SWITCH_X;
+            }
+            if (~PINB & (1<<3)) {
+                ReportData->Button |= SWITCH_Y;
+            }
+			if (~PINB & (1<<2)) {
+                ReportData->Button |= SWITCH_B;
+            }
+            if (~PINB & (1<<1)) {
+                ReportData->Button |= SWITCH_MINUS;
+            }
+            
 			return;
 	}
-
-	// // Inking
-	// if (state != SYNC_CONTROLLER && state != SYNC_POSITION)
-	// 	if (pgm_read_byte(&(image_data[(xpos / 8) + (ypos * 40)])) & 1 << (xpos % 8))
-	// 		ReportData->Button |= SWITCH_A;
-
-	// Prepare to echo this report
-	memcpy(&last_report, ReportData, sizeof(USB_JoystickReport_Input_t));
-	echoes = ECHOES;
 
 }
